@@ -272,8 +272,13 @@ public:
 				brojac++;
 			}
 		}
-		prosjek = suma / brojac;
-		return prosjek;
+		if (brojac > 0)
+		{
+			prosjek = suma / brojac;
+			return prosjek;
+		}
+		else
+			return 0.0;
 	}
 	//
 	~Tehnika() {
@@ -361,8 +366,13 @@ public:
 				brojac++;
 			}
 		}
-		prosjek = suma / brojac;
-		return prosjek;
+		if (brojac > 0)
+		{
+			prosjek = suma / brojac;
+			return prosjek;
+		}
+		else
+			return 0.0;
 	}
 
 	//
@@ -528,18 +538,24 @@ public:
 		float suma = 0.0f;
 		float prosjek = 0;
 		int brojac = 0;
-		if (_polozeniPojasevi.size() == 0)
-			return 0.0f;
+
+
 		for (size_t i = 0; i < _polozeniPojasevi.size(); i++)
 		{
-			if (_polozeniPojasevi[i]->GetProsjekPolaganje() != 0)
+			if (_polozeniPojasevi[i]->GetProsjekPolaganje() > 0)
 			{
 				suma += _polozeniPojasevi[i]->GetProsjekPolaganje();
 				brojac++;
 			}
+			
 		}
-		prosjek = suma / brojac;
-		return prosjek;
+		if (brojac > 0)
+		{
+			prosjek = suma / brojac;
+			return prosjek;
+		}
+		else
+			return 0.0;
 	}
 	//
 	~KaratePolaznik() {
