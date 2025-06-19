@@ -1,2 +1,14 @@
 # PR2
 Ispitni zadaci PR2
+
+Redoslijed :
+-2.9.2024 G1
+-2.9.2024 G2 (ponavlja se)
+-15.7.2024 
+-27.6.2024
+-18.9.2023
+-19.7.2022
+-30.6.2022
+-16.7.2021 G1
+-16.7.2021 G2
+-25.6.2021 G1![image](https://github.com/user-attachments/assets/cea856f0-ebfb-449c-a2e5-ba4e4c9591b7)
