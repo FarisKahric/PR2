@@ -11,4 +11,4 @@ Redoslijed :
 -30.6.2022
 -16.7.2021 G1
 -16.7.2021 G2
--25.6.2021 G1![image](https://github.com/user-attachments/assets/cea856f0-ebfb-449c-a2e5-ba4e4c9591b7)
+-25.6.2021 G1
