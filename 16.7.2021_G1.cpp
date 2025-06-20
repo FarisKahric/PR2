@@ -1,10 +1,13 @@
 #include <iostream>
-#include <regex>
-#include <mutex>
-#include <string>
-#include <thread>
-#include <vector>
+#include <memory>
 #include <chrono>
+#include <string>
+#include <vector>
+#include <thread>
+#include <mutex>
+#include <regex>
+
+
 
 using namespace std;
 const char* PORUKA = "\n-------------------------------------------------------------------------------\n"
@@ -26,21 +29,23 @@ const char* crt = "\n-------------------------------------------\n";
 enum Predmet { UIT, PRI, PRII, PRIII, RSI, RSII };
 const int brojRjesenja = 6;
 
-
 //
-const char* NIJE_VALIDNA = "<VRIJEDNOST_NIJE_VALIDNA>";
+const char* NIJE_VALIDNO = "<VRIJEDNOST_NIJE_VALIDNA>";
 
-char* GetNizKaraktera(const char* sadrzaj) {
-	if (sadrzaj == nullptr) return nullptr;
+char* GetNizKaraktera(const char* sadrzaj, bool dealociraj = false) {
+
+	if (sadrzaj == nullptr)return nullptr;
 
 	int vel = strlen(sadrzaj) + 1;
 	char* temp = new char[vel];
 	strcpy_s(temp, vel, sadrzaj);
-	
+	if (dealociraj)
+		delete[] sadrzaj;
+
 	return temp;
 }
 
-ostream& operator<<(ostream& COUT, Predmet obj) {
+ostream& operator<<(ostream& COUT, const Predmet& obj) {
 	const char* niz[] = { "UIT", "PRI", "PRII", "PRIII", "RSI", "RSII" };
 	COUT << niz[obj];
 	return COUT;
@@ -69,50 +74,55 @@ public:
 	}
 
 	Kolekcija& operator=(const Kolekcija& obj) {
-		if (this != &obj) {
+		if(this!=&obj){
+
 			delete _trenutno; _trenutno = nullptr;
 			_trenutno = new int(*obj._trenutno);
-			for (size_t i = 0; i < _trenutno; i++)
+			for (size_t i = 0; i < *_trenutno; i++)
 			{
-				_elementi1[i] = obj._elementi1[i];
-				_elementi2[i] = obj._elementi2[i];
+				_elementi1[i] = _elementi1[i];
+				_elementi2[i] = _elementi2[i];
 			}
 		}
 		return *this;
 	}
 
 	void AddElement(T1 el1, T2 el2, int lokacija = -1) {
+
 		if (*_trenutno == max)
-			throw exception("Niz je pun.\n");
+			throw exception("Kolekcija puna. \n");
 
-
-		if (lokacija == -1)
+		if(lokacija == -1)
 		{
 			_elementi1[*_trenutno] = el1;
 			_elementi2[*_trenutno] = el2;
-			(*_trenutno)++;
 		}
-
-		else
+		else if (lokacija > -1)
 		{
-			(*_trenutno)++;
-			for (size_t i = *_trenutno - 1; i > lokacija; i--)
+			for (size_t i = *_trenutno; i > lokacija ; i--)
 			{
 				_elementi1[i] = _elementi1[i - 1];
 				_elementi2[i] = _elementi2[i - 1];
+
 			}
 			_elementi1[lokacija] = el1;
 			_elementi2[lokacija] = el2;
 		}
 
+		(*_trenutno)++;
 	}
 
 	void RemoveAt(int lokacija) {
+
 		for (size_t i = lokacija; i < *_trenutno - 1; i++)
 		{
 			_elementi1[i] = _elementi1[i + 1];
 			_elementi2[i] = _elementi2[i + 1];
 		}
+
+		_elementi1[*_trenutno - 1] = T1{};
+		_elementi2[*_trenutno - 1] = T2{};
+
 		(*_trenutno)--;
 	}
 
@@ -157,9 +167,8 @@ public:
 		_mjesec = new int(*obj._mjesec);
 		_godina = new int(*obj._godina);
 	}
-
 	Datum& operator=(const Datum& obj) {
-		if (this != &obj) {
+		if(this!=&obj){
 			delete _dan; _dan = nullptr;
 			delete _mjesec; _mjesec = nullptr;
 			delete _godina; _godina = nullptr;
@@ -170,31 +179,33 @@ public:
 		return *this;
 	}
 
-	int GetBrojDana() const {
+	int GetDatum() const {
 		return (*_godina) * 365 + (*_mjesec) * 30 + (*_dan);
 	}
 
+	friend int operator-(const Datum& d1, const Datum& d2) {
+		return abs(d1.GetDatum() - d2.GetDatum());
+	}
 	friend bool operator==(const Datum& d1, const Datum& d2) {
-		return(d1.GetBrojDana() == d2.GetBrojDana());
+		return (d1.GetDatum() == d2.GetDatum());
 	}
 	friend bool operator!=(const Datum& d1, const Datum& d2) {
 		return !(d1 == d2);
-	}	
-	friend int operator-(const Datum& d1, const Datum& d2) {
-		return abs(d1.GetBrojDana() - d2.GetBrojDana());
 	}
-	friend bool operator<(const Datum& d1, const Datum& d2) {
-		return (d1.GetBrojDana() < d2.GetBrojDana());
-	}
-	friend bool operator>(const Datum& d1, const Datum& d2) {
-		return (d1.GetBrojDana() > d2.GetBrojDana());
-	}
+
 	friend bool operator<=(const Datum& d1, const Datum& d2) {
-		return (d1.GetBrojDana() <= d2.GetBrojDana());
+		return (d1.GetDatum() <= d2.GetDatum());
 	}
 	friend bool operator>=(const Datum& d1, const Datum& d2) {
-		return (d1.GetBrojDana() >= d2.GetBrojDana());
+		return (d1.GetDatum() >= d2.GetDatum());
 	}
+	friend bool operator<(const Datum& d1, const Datum& d2) {
+		return (d1.GetDatum() < d2.GetDatum());
+	}
+	friend bool operator>(const Datum& d1, const Datum& d2) {
+		return (d1.GetDatum() > d2.GetDatum());
+	}
+
 	//
 	~Datum() {
 		delete _dan; _dan = nullptr;
@@ -222,7 +233,7 @@ public:
 	}
 
 	Pitanje& operator=(const Pitanje& obj) {
-		if (this != &obj) {
+		if(this!=&obj){
 			delete[] _sadrzaj; _sadrzaj = nullptr;
 			delete _ocjeneRjesenja; _ocjeneRjesenja = nullptr;
 			_sadrzaj = GetNizKaraktera(obj._sadrzaj);
@@ -249,34 +260,41 @@ public:
 	}
 
 	bool AddOcjena(int ocjena, Datum datum) {
-		
+
 		if (_ocjeneRjesenja->getTrenutno() > 0) {
 			Datum zadnji = _ocjeneRjesenja->getElement2(_ocjeneRjesenja->getTrenutno() - 1);
+
+			if ((datum - zadnji) < 3)
+				return false;
 			if (datum < zadnji)
 				return false;
-			if (abs(datum - zadnji) < 3)
-				return false;
-
 		}
+
 
 		_ocjeneRjesenja->AddElement(ocjena, datum);
 		return true;
-
 	}
 
-	float Prosjek() const {
-
+	float GetProsjekPitanje() const {
+		float prosjek = 0.0f;
+		float suma = 0;
+		int brojac = 0;
 		if (_ocjeneRjesenja->getTrenutno() == 0)
 			return 0;
-
-		int suma = 0;
-		float prosjek = 0.0f;
-		for (size_t i = 0; i < _ocjeneRjesenja->getTrenutno(); i++)
+		for (size_t i = 0; i <_ocjeneRjesenja->getTrenutno() ; i++)
 		{
-			suma += _ocjeneRjesenja->getElement1(i);
+			if (_ocjeneRjesenja->getElement1(i) != 0) {
+				brojac++;
+				suma += _ocjeneRjesenja->getElement1(i);
+			}
 		}
-		prosjek = suma / _ocjeneRjesenja->getTrenutno();
-		return prosjek;
+		if (brojac > 0)
+		{
+			prosjek = suma / brojac;
+			return prosjek;
+		}
+		else
+			return 0;
 	}
 	//
 	~Pitanje() {
@@ -290,13 +308,14 @@ public:
 
 	//
 	friend ostream& operator<< (ostream& COUT, const Pitanje& obj) {
-		COUT << "Sadrzaj : " << obj._sadrzaj << endl;
-		COUT << "Ocjene : " << endl;
+		COUT << "Pitanje -> " << obj._sadrzaj << endl;
+		COUT << "Ocjene -> " << endl;
 		for (size_t i = 0; i < obj._ocjeneRjesenja->getTrenutno(); i++)
 		{
 			COUT << obj._ocjeneRjesenja->getElement1(i) << " - " << obj._ocjeneRjesenja->getElement2(i) << endl;
 		}
-		COUT << "Prosjek : " << obj.Prosjek() << endl;
+		COUT << "Prosjek za ovo pitanje : " << obj.GetProsjekPitanje() << endl;
+		COUT << endl;
 		return COUT;
 	}
 	//
@@ -309,24 +328,26 @@ public:
 	Ispit(Predmet predmet = UIT) {
 		_predmet = predmet;
 	}
-	
+
 	//
+	
 	Ispit(const Ispit& obj) {
 		_predmet = obj._predmet;
-		for (size_t i = 0; i < _pitanjaOdgovori.size(); i++)
+		for (size_t i = 0; i < obj._pitanjaOdgovori.size(); i++)
 		{
 			_pitanjaOdgovori.push_back(new Pitanje(*obj._pitanjaOdgovori[i]));
 		}
 	}
 
+
 	Ispit& operator=(const Ispit& obj) {
-		if (this != &obj) {
+		if(this!=&obj){
 			for (size_t i = 0; i < _pitanjaOdgovori.size(); i++) {
 				delete _pitanjaOdgovori[i];
 				_pitanjaOdgovori[i] = nullptr;
 			}
 			_predmet = obj._predmet;
-			for (size_t i = 0; i < _pitanjaOdgovori.size(); i++)
+			for (size_t i = 0; i < obj._pitanjaOdgovori.size(); i++)
 			{
 				_pitanjaOdgovori.push_back(new Pitanje(*obj._pitanjaOdgovori[i]));
 			}
@@ -341,30 +362,39 @@ public:
 			return false;
 		for (size_t i = 0; i < i1._pitanjaOdgovori.size(); i++)
 		{
-			if (i1._pitanjaOdgovori[i] != i2._pitanjaOdgovori[i])
+			if (*i1._pitanjaOdgovori[i] != *i2._pitanjaOdgovori[i])
 				return false;
 		}
 		return true;
 	}
-
 	friend bool operator!=(const Ispit& i1, const Ispit& i2) {
 		return !(i1 == i2);
 	}
 
-	float ProsjekIspit() const {
+
+	float GetProsjekIspit() const {
 		float prosjek = 0.0f;
 		float suma = 0;
-
+		int brojac = 0;
 		if (_pitanjaOdgovori.size() == 0)
 			return 0;
 		for (size_t i = 0; i < _pitanjaOdgovori.size(); i++)
 		{
-			suma += _pitanjaOdgovori[i]->Prosjek();
+			if (_pitanjaOdgovori[i]->GetProsjekPitanje() != 0) {
+				brojac++;
+				suma += _pitanjaOdgovori[i]->GetProsjekPitanje();
+			}
 		}
-
-		prosjek = suma / _pitanjaOdgovori.size();
-		return prosjek;
+		if (brojac > 0)
+		{
+			prosjek = suma / brojac;
+			return prosjek;
+		}
+		else
+			return 0;
 	}
+
+	
 	//
 	~Ispit() {
 		for (size_t i = 0; i < _pitanjaOdgovori.size(); i++) {
@@ -374,22 +404,26 @@ public:
 	}
 	vector<Pitanje*>& GetPitanjaOdgovore() { return _pitanjaOdgovori; }
 	Predmet GetPredmet() { return _predmet; }
-	
-	friend ostream& operator<<(ostream& COUT, const Ispit& obj) {
-		COUT << "Predmet : " << obj._predmet << endl;
+
+	//
+	friend ostream& operator<< (ostream& COUT, const Ispit& obj) {
+		
+		COUT << "Predmet -> " << obj._predmet << endl;
 		for (size_t i = 0; i < obj._pitanjaOdgovori.size(); i++)
 		{
-			COUT << *obj._pitanjaOdgovori[i];
+			COUT << *obj._pitanjaOdgovori[i] << endl;
 		}
+
+		COUT << "Prosjek ispita : " << obj.GetProsjekIspit() << endl;
+		COUT << endl;
 		return COUT;
 	}
 };
 
 
-bool ValidirajLozinku(string lozinka) {
-	return regex_search(lozinka, regex("(?=.{7,})(?=.*[A-Z]{1,})(?=.*[a-z]{1,})(?=.*[0-9]{1,})(?=.*\\W{1,})"));
+bool ValidirajLozinku(string sadrzaj) {
+	return regex_search(sadrzaj, regex("(?=.{7})(?=.*[A-Z]{1,})(?=.*[a-z]{1,})(?=.*[0-9]{1,})(?=.*\\W{1,})"));
 }
-
 
 class Korisnik {
 	char* _imePrezime;
@@ -400,64 +434,93 @@ public:
 	{
 		_imePrezime = GetNizKaraktera(imePrezime);
 		_emailAdresa = emailAdresa;
-		_lozinka = ValidirajLozinku(lozinka) ? lozinka : NIJE_VALIDNA;
+		_lozinka = ValidirajLozinku(lozinka) ? lozinka : NIJE_VALIDNO;
+		
 	}
-	
 	//
-
-	Korisnik(const Korisnik& obj) {
+	Korisnik(const Korisnik& obj)
+	{
 		_imePrezime = GetNizKaraktera(obj._imePrezime);
 		_emailAdresa = obj._emailAdresa;
 		_lozinka = obj._lozinka;
-	}
 
-	Korisnik& operator=(const Korisnik& obj) {
-		if (this != &obj) {
+	}
+	Korisnik& operator=(const Korisnik& obj)
+	{
+		if(this!=&obj){
 			delete[] _imePrezime; _imePrezime = nullptr;
 			_imePrezime = GetNizKaraktera(obj._imePrezime);
 			_emailAdresa = obj._emailAdresa;
 			_lozinka = obj._lozinka;
 		}
 		return *this;
-	}
 
-	// + virtual
+	}
+	friend bool operator==(const Korisnik& i1, const Korisnik& i2) {
+		if (strcmp(i1._imePrezime, i2._imePrezime) != 0)
+			return false;
+		if (i1._emailAdresa != i2._emailAdresa)
+			return false;
+		if (i1._lozinka != i2._lozinka)
+			return false;
+		return true;
+	}
+	friend bool operator!=(const Korisnik& k1, const Korisnik& k2) {
+		return !(k1 == k2);
+	}
+	//
 	virtual ~Korisnik() { delete[] _imePrezime; _imePrezime = nullptr; }
 	string GetEmail() { return _emailAdresa; }
 	string GetLozinka() { return _lozinka; }
 	char* GetImePrezime() { return _imePrezime; }
-	virtual void Info() {}
 
-	friend ostream& operator<<(ostream& COUT, const Korisnik& obj) {
+	virtual void Info() = 0;
 
-		COUT << "Ime i prezime : " << obj._imePrezime << endl;
-		COUT << "Email : " << obj._emailAdresa << endl;
-		COUT << "Lozinka : " << obj._lozinka << endl;
+	friend ostream& operator<< (ostream& COUT, const Korisnik& obj) {
+
+		COUT << "Korisnik -> " << obj._imePrezime << " " << obj._emailAdresa << " " << obj._lozinka << endl;
+		COUT << endl;
 		return COUT;
 	}
 };
 
-mutex muteks;
-// : public 
+
+mutex mjuteks;
+/*nakon evidentiranja ocjene na bilo kojem odgovoru, kandidatu se salje
+   email sa porukom:
+	FROM:info@kursevi.ba
+	TO: emailKorisnika
+	Postovani ime i prezime, evidentirana vam je ocjena X za odgovor na
+   pitanje Y. Dosadasnji uspjeh (prosjek ocjena)
+	za pitanje Y iznosi F, a ukupni uspjeh (prosjek ocjena) na svim
+   predmetima iznosi Z.
+	Pozdrav.
+	EDUTeam.
+	slanje email poruka implemenitrati koristeci zasebne thread-ove.
+	*/
 class Kandidat : public Korisnik {
 	vector<Ispit> _polozeniPredmeti;
 
-
 	void PosaljiMail(int ocjena, Pitanje pitanje) {
-		muteks.lock();
+
+		mjuteks.lock();
+		cout << endl;
+		this_thread::sleep_for(chrono::seconds(1));
 		cout << "FROM:info@kursevi.ba" << endl;
-		cout << "TO: " << GetEmail() << endl;
-		cout << "Postovani " << GetImePrezime() << " evidentirana vam je ocjena " << ocjena << " za odgovor na " << pitanje.GetSadrzaj() << endl;
-		cout << "Dosadasnji uspjeh (prosjek ocjena) za pitanje " << pitanje.GetSadrzaj() << " iznosi " << pitanje.Prosjek() << endl;
-		cout << "A ukupni uspjeh (prosjek ocjena) na svim predmetima iznosi " << GetUkupno() << endl;
+		cout << "TO: " << GetEmail();
+		cout << "Postovani " << GetImePrezime() << ", evidentirana vam je ocjena " << ocjena << " za odgovor na" << endl;
+		cout << "pitanje " << pitanje.GetSadrzaj() << ". Dosadasnji uspjeh (prosjek ocjena)" << endl;
+		cout << "za pitanje " << pitanje.GetSadrzaj() << " iznosi " << pitanje.GetProsjekPitanje() << ", a ukupni uspjeh (prosjek ocjena) na svim" << endl;
+		cout << "predmetima iznosi " << GetProsjekUkupno() << endl;
 		cout << "Pozdrav." << endl;
 		cout << "EDUTeam." << endl;
 		cout << endl;
-		muteks.unlock();
+		mjuteks.unlock();
 	}
 
 public:
 	Kandidat(const char* imePrezime, string emailAdresa, string lozinka) : Korisnik(imePrezime,emailAdresa,lozinka) {
+		
 		for (size_t i = 0; i <= brojRjesenja; i++)
 		{
 			_polozeniPredmeti.push_back(Predmet(i));
@@ -466,25 +529,65 @@ public:
 	//
 
 	Kandidat(const Kandidat& obj) : Korisnik(obj) {
-		for (size_t i = 0; i <= _polozeniPredmeti.size(); i++)
+
+		for (size_t i = 0; i < obj._polozeniPredmeti.size(); i++)
 		{
 			_polozeniPredmeti.push_back(obj._polozeniPredmeti[i]);
 		}
 	}
-
 	Kandidat& operator=(const Kandidat& obj) {
-		if (this != &obj) {
-			(Korisnik&)(*this) = obj;
-			for (size_t i = 0; i <= _polozeniPredmeti.size(); i++)
+
+		if(this!=&obj){
+			cout << crt << "DESTRUKTOR -> Kandidat" << crt;
+			for (size_t i = 0; i < obj._polozeniPredmeti.size(); i++)
 			{
 				_polozeniPredmeti.push_back(obj._polozeniPredmeti[i]);
 			}
 		}
 		return *this;
 	}
+
+	friend bool operator==(const Kandidat& k1, const Kandidat& k2) {
+		if (k1._polozeniPredmeti.size() != k2._polozeniPredmeti.size())
+			return false;
+		for (size_t i = 0; i < k1._polozeniPredmeti.size(); i++)
+		{
+			if (k1._polozeniPredmeti[i] != k2._polozeniPredmeti[i])
+				return false;
+
+		}
+		return true;
+	}
+
+	friend bool operator!=(const Kandidat& k1, const Kandidat& k2) {
+		return !(k1 == k2);
+	}
+
+	float GetProsjekUkupno() const {
+		float prosjek = 0.0f;
+		float suma = 0;
+		int brojac = 0;
+		if (_polozeniPredmeti.size() == 0)
+			return 0;
+		for (size_t i = 0; i < _polozeniPredmeti.size(); i++)
+		{
+			if (_polozeniPredmeti[i].GetProsjekIspit() != 0) {
+				brojac++;
+			}
+			suma += _polozeniPredmeti[i].GetProsjekIspit();
+		}
+		if (brojac > 0)
+		{
+			prosjek = suma / brojac;
+			return prosjek;
+		}
+		else
+			return 0;
+	}
 	
-	bool AddPitanje(Predmet predmet, Pitanje pitanje)
-	{
+
+	bool AddPitanje(Predmet predmet, Pitanje pitanje) {
+
 		for (size_t i = 0; i < _polozeniPredmeti[predmet].GetPitanjaOdgovore().size(); i++)
 		{
 			if (*_polozeniPredmeti[predmet].GetPitanjaOdgovore()[i] == pitanje)
@@ -492,42 +595,26 @@ public:
 		}
 
 		if (predmet > 1) {
-			if (_polozeniPredmeti[predmet - 1].GetPitanjaOdgovore().size() < 3)
-				return false;
-
-			if (_polozeniPredmeti[predmet - 1].ProsjekIspit() <= 3.5f)
+			if (_polozeniPredmeti[predmet - 1].GetPitanjaOdgovore().size() < 3 || _polozeniPredmeti[predmet - 1].GetProsjekIspit() <= 3.5)
 				return false;
 		}
-
+		
 		_polozeniPredmeti[predmet].GetPitanjaOdgovore().push_back(new Pitanje(pitanje));
 		for (size_t i = 0; i < pitanje.GetOcjene().getTrenutno(); i++)
 		{
 			thread tred(&Kandidat::PosaljiMail, this, pitanje.GetOcjene().getElement1(i), pitanje);
 			tred.join();
 		}
+
 		return true;
 	}
-
-	float GetUkupno() const {
-		float prosjek = 0.0f;
-		int suma = 0;
-		if (_polozeniPredmeti.size() == 0)
-			return 0;
-
-		for (size_t i = 0; i < _polozeniPredmeti.size(); i++)
-		{
-			suma += _polozeniPredmeti[i].ProsjekIspit();
-		}
-		prosjek = suma / _polozeniPredmeti.size();
-		return prosjek;
-	}
 	//
+
 	~Kandidat() {
 		cout << crt << "DESTRUKTOR -> Kandidat" << crt;
 	}
 	friend ostream& operator<< (ostream& COUT, Kandidat& obj) {
-		COUT << obj.GetImePrezime() << " " << obj.GetEmail() << " " <<
-			obj.GetLozinka() << endl;
+		COUT << obj.GetImePrezime() << " " << obj.GetEmail() << " " << obj.GetLozinka() << endl;
 		for (size_t i = 0; i < obj._polozeniPredmeti.size(); i++) {
 			if (obj._polozeniPredmeti[i].GetPitanjaOdgovore().size() > 0) {
 				COUT << obj._polozeniPredmeti[i];
@@ -535,29 +622,30 @@ public:
 			else
 				continue;
 		}
-
+		COUT << "Prosjek ukupno : " << obj.GetProsjekUkupno() << endl;
+		COUT << endl;
 		return COUT;
 	}
 	vector<Ispit>& GetPolozeniPredmeti() { return _polozeniPredmeti; }
 	//
 
-	virtual void Info() {
+	void Info() {
 		cout << *this;
 	}
-
-	//
 	
+	//
+
 };
 
 
 
 const char* GetOdgovorNaPrvoPitanje() {
 	cout << "Pitanje -> Pojasnite prednosti i nedostatke visestrukog nasljedjivanja.\n";
-	return "Odgovor -> Kod visestrukog nasljedjivanja prednost je sto se mozue u jednoj klasi napisati kod i iskoristiti napisana logika u rugim bez potrebe ponavljanja koda na vise mjesta.Mana je sto se moze desiti da nasljedujemo klase koje su nasljedile istu baznu klasu zbog cega se moze dogodotii da se kreira vise kopija istog objekta sto dosnoi ambiguoznost pri pozivanju oredjenjih metoda.";
+	return "Odgovor -> ";
 }
 const char* GetOdgovorNaDrugoPitanje() {
 	cout << "Pitanje -> Ukratko opisite znacaj i nacin koristanje pametnih pokazivaca ? \n";
-	return "Odgovor -> Pametni pokazivac je tip podatka koji pruza funkcionalnost pointera sa automatskim memory managementom.,KAda se samrt pointer vise ne koristi on se dealocira sam.Neki od toipoda su unique ptr shared ptr weak ptr i auto ptr.";
+	return "Odgovor -> ";
 }
 void main() {
 	//cout << PORUKA;
@@ -574,6 +662,8 @@ void main() {
 		datum30062020(30, 6, 2020),
 		datum05072020(5, 7, 2020);
 
+	cout << datum19062020 << endl;
+	cout << endl;
 	int kolekcijaTestSize = 10;
 	Kolekcija<int, int> kolekcija1;
 	for (int i = 0; i < kolekcijaTestSize; i++)
@@ -634,7 +724,7 @@ void main() {
 	Kolekcija<int, int> kolekcija2 = kolekcija1;
 
 	cout << kolekcija1 << crt;
-	//na osnovu vrijednosti T1 mijenja vrijednost T2.
+	//na osnovu vrijednosti t1 mijenja vrijednost t2.
 	kolekcija1[9] = 2;
 	/* npr.ako unutar kolekcije postoje elementi:
 	0 0
@@ -649,7 +739,7 @@ void main() {
 	2 2
 	3 3
 	*/
-	 
+
 	cout << kolekcija1;
 	cout << crt;
 
@@ -658,6 +748,9 @@ void main() {
 		dinamickaMemorija("Navedite pristupe za upravljanje dinamickom memorijom."),
 		visenitnoProgramiranje("Na koji se sve nacin moze koristiti veci broj niti tokom izvrsenja programa."),
 		regex("Navedite par primjera regex validacije podataka.");
+
+	cout << sortiranjeNiza << endl;
+
 	/*svako pitanje moze imati vise ocjena tj. razlicita rjesenja/odgovori se
    mogu postaviti u vise navrata.Drugim rijecima, ocjena, rjesenje i odgovor se
    mogu posmatrati kao sinonimi.
@@ -666,6 +759,8 @@ void main() {
 	- nije dozvoljeno dodati ocjenu sa ranijim datumom u odnosu na vec
    evidentirane (bez obzira sto je stariji od 3 dana)
 	*/
+
+
 	if (sortiranjeNiza.AddOcjena(1, datum19062020))
 		cout << "Ocjena evidentirana!" << endl;
 	if (!sortiranjeNiza.AddOcjena(5, datum20062020))
@@ -674,10 +769,12 @@ void main() {
 		cout << "Ocjena evidentirana!" << endl;
 	// ispisuje sadrzaj/tekst pitanja, ocjene (zajedno sa datumom) i prosjecnu ocjenu za sve odgovore / rjesenja
 		// ukoliko pitanje nema niti jednu ocjenu prosjecna treba biti 0
+	
+	cout << endl;
 	cout << sortiranjeNiza << endl;
-	
+
 	cout << crt;
-	
+
 	if (ValidirajLozinku("john4Do*e"))
 		cout << "OK" << crt;
 	if (!ValidirajLozinku("john4Doe"))
@@ -694,9 +791,7 @@ void main() {
 	- velika i mala slova
 	- najmanje jedan broj
 	- najmanje jedan specijalni znak
-   Fakultet informacijskih tehnologija
-   Pismeni dio ispita iz predmeta Programiranje II – 16.07.2021
-   6
+  
 	za provjeru validnosti lozinke koristiti globalnu funkciju
    ValidirajLozinku, a unutar nje regex metode.
 	validacija lozinke se vrsi unutar konstruktora klase Korisnik, a u
@@ -704,11 +799,12 @@ void main() {
 	postaviti je na podrazumijevanu vrijednost: <VRIJEDNOST_NIJE_VALIDNA>
 	*/
 
-
+	cout << endl;
 
 	Korisnik* jasmin = new Kandidat("Jasmin Azemovic", "jasmin@kursevi.ba", "j@sm1N*");
 	Korisnik* adel = new Kandidat("Adel Handzic", "adel@edu.kursevi.ba", "4Ade1*H");
 	Korisnik* lozinkaNijeValidna = new Kandidat("John Doe", "john.doe@google.com", "johndoe");
+	
 	/*
 	svi odgovori na nivou jednog predmeta (PRI, PRII... ) se evidentiraju
    unutar istog objekta tipa Ispit tj. pripadajuceg objekta tipa Pitanje,
@@ -740,6 +836,7 @@ void main() {
 		if (!jasminPolaznik->AddPitanje(PRI, sortiranjeNiza))
 			cout << "Pitanje NIJE uspjesno dodano!" << crt;
 		//ispisuje sve dostupne podatke o kandidatu
+		cout << endl;
 		cout << *jasminPolaznik << crt;
 	}
 
@@ -756,9 +853,6 @@ void main() {
    predmetima iznosi Z.
 	Pozdrav.
 	EDUTeam.
-   Fakultet informacijskih tehnologija
-   Pismeni dio ispita iz predmeta Programiranje II – 16.07.2021
-   7
 	slanje email poruka implemenitrati koristeci zasebne thread-ove.
 	*/
 	//osigurati da se u narednim linijama poziva i destruktor klase Kandidat
