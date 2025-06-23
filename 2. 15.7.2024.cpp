@@ -564,30 +564,26 @@ public:
 		return _utakmice;
 	}
 
-	friend ostream& operator<<(ostream& COUT, Prventstvo& obj) {
+	
+	friend ostream& operator<< (ostream& COUT, Prventstvo& obj) {
 		COUT << crt;
 		for (size_t i = 0; i < obj._utakmice.getTrenutno(); i++)
 		{
-			COUT << obj._utakmice.getElement1(i).GetDrzava() << " " << obj._utakmice.getElement1(i).GetBrojPogodaka() << "-" << obj._utakmice.getElement2(i).GetBrojPogodaka() << obj._utakmice.getElement2(i).GetDrzava() << endl;
+			COUT << "(" << obj._utakmice.getElement1(i).BrojGolova() << ") " << obj._utakmice.getElement1(i).GetDrzava() << " : " << obj._utakmice.getElement2(i).GetDrzava() << " (" << obj._utakmice.getElement2(i).BrojGolova() << ")" << endl;
 		}
 		COUT << crt;
-		COUT << "Strijelci za tim BIH : " << endl;
 		for (size_t i = 0; i < obj._utakmice.getTrenutno(); i++)
 		{
 			for (size_t j = 0; j < obj._utakmice.getElement1(i).GetStrijelci().size(); j++)
 			{
 				COUT << obj._utakmice.getElement1(i).GetStrijelci()[j].GetImePrezime() << endl;
 			}
-		}
-
-		COUT << "Strijelci za tim ENG : " << endl;
-		for (size_t i = 0; i < obj._utakmice.getTrenutno(); i++)
-		{
 			for (size_t j = 0; j < obj._utakmice.getElement2(i).GetStrijelci().size(); j++)
 			{
 				COUT << obj._utakmice.getElement2(i).GetStrijelci()[j].GetImePrezime() << endl;
 			}
 		}
+		COUT << crt;
 		return COUT;
 	}
 
