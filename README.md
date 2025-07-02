@@ -37,5 +37,4 @@ Redoslijed :
 - kod vektora isto obicna ide samo = obj._vektor ali kod pokazivaca moras sa FOR proci kroz sve clanove i u svaki pushback(new Vektor(*obj._vektor[i]);
 - kad god imas u enumeraciji =1, ne ide funkcija ispisa te moras [razred - 1]
 - pripaziti da ne brises 2 puta istu memoriju
--
-![image](https://github.com/user-attachments/assets/4673f832-3e66-47d7-a648-aeead3ea318f)
+
